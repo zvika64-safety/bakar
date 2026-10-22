@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>מבדק בטיחות באתר בניה</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f5f6f8;--card:#fff;--tx:#1d2329;--mut:#657080;--bd:#d9dee5;--ok:#168a5c;--bad:#c4001f;--na:#7b8794;--acc:#c4001f;--inp:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#14171b;--card:#1d2127;--tx:#e8ebee;--mut:#9aa5b1;--bd:#2f353d;--inp:#14171b}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#14171b;--card:#1d2127;--tx:#e8ebee;--mut:#9aa5b1;--bd:#2f353d;--inp:#14171b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Segoe UI",Arial,"Noto Sans Hebrew",sans-serif;line-height:1.5}
+main{max-width:860px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+label{font-size:13px;color:var(--mut);display:block;margin-bottom:3px}
+input,textarea,select{width:100%;font:inherit;color:var(--tx);background:var(--inp);border:1px solid var(--bd);border-radius:7px;padding:8px}
+textarea{min-height:60px;resize:vertical}
+.sum{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:8px 0}
+.chip{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:20px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.chip.on{outline:2px solid var(--acc)}
+.chip b{margin-inline-start:4px}
+.it{border-inline-start:5px solid var(--bd)}
+.it.ok{border-inline-start-color:var(--ok)}.it.bad{border-inline-start-color:var(--bad)}.it.na{border-inline-start-color:var(--na)}
+.it h3{margin:0 0 2px;font-size:16px}
+.it p{margin:0 0 10px;font-size:13px;color:var(--mut)}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.seg button{flex:1;min-width:90px;border:1px solid var(--bd);background:var(--inp);color:var(--tx);border-radius:7px;padding:8px;font:inherit;cursor:pointer}
+.seg button.ok.on{background:var(--ok);color:#fff;border-color:var(--ok)}
+.seg button.bad.on{background:var(--bad);color:#fff;border-color:var(--bad)}
+.seg button.na.on{background:var(--na);color:#fff;border-color:var(--na)}
+.more{display:none;gap:10px}
+.it.bad .more.bad,.it.open .more{display:grid}
+.ph{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.ph div{position:relative}
+.ph img{width:96px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--bd)}
+.ph button{position:absolute;top:2px;inset-inline-start:2px;background:#000a;color:#fff;border:0;border-radius:50%;width:20px;height:20px;cursor:pointer}
+.btn{border:0;background:var(--acc);color:#fff;border-radius:8px;padding:10px 16px;font:inherit;cursor:pointer}
+.btn.g{background:var(--card);color:var(--tx);border:1px solid var(--bd)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.small{font-size:12px;color:var(--mut)}
+.add{font-size:13px;color:var(--acc);cursor:pointer;background:none;border:0;padding:4px 0;font:inherit}
+@media print{.sum,.bar,.seg button:not(.on),.add,.ph button,.chip{display:none!important}.sum{display:none}body{background:#fff;color:#000}.card{break-inside:avoid;border-color:#999}.it .more{display:grid!important}.it:not(.bad) .more.bad{display:none!important}.it .more.bad:has(textarea:placeholder-shown){display:none!important}.printsum{display:block!important}}
+.printsum{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>🦺 מבדק בטיחות באתר בניה</h1>
+<div class="card"><div class="grid" id="hdr"></div></div>
+<div class="sum" id="sum"></div>
+<div id="list"></div>
+<div class="card"><label>הערות סיכום</label><textarea id="gen" placeholder="הערות כלליות למבדק"></textarea>
+<p class="small">דוח המבדק מתייחס לתמונת המצב באתר במועד ביצוע המבדק בלבד, ואינו מחליף או מצמצם את אחריות מבצע הבנייה, הקבלן הראשי ובעלי התפקידים באתר.</p></div>
+<div class="bar"><button class="btn" onclick="window.print()">הדפסה / שמירה כ־PDF</button><button class="btn g" onclick="expo()">ייצוא נתונים (JSON)</button><button class="btn g" onclick="reset()">מבדק חדש</button></div>
+<p class="small">הנתונים נשמרים אוטומטית בדפדפן שלך בלבד.</p>
+</main>
+<script>
+var H=[["client","שם הלקוח"],["site","שם האתר"],["addr","כתובת האתר"],["pm","מנהל פרויקט/אתר"],["wm","מנהל העבודה"],["present","המבדק התבצע בנוכחות"],["auditor","עורך המבדק"],["role","תפקיד"],["date","תאריך ביצוע"]];
+var T=[
+["שילוט חיצוני","שילוט ברור ״סכנה – אתר בנייה״, שלט פרטי האתר ובעלי תפקידים"],
+["שילוט בטיחות","אזהרה, חובה והכוונה לעובדי האתר"],
+["גידור האתר","רציפות ההיקף, גובה הגדר, תקינות ויציבות, בטיחות הציבור"],
+["בקרת כניסה לאתר","אמצעי בקרה יעילים למניעת כניסת בלתי מורשים בכל שער או פתח"],
+["דרכי גישה ומעבר בתוך האתר","מוגדרות, מסומנות ומתוחזקות לתנועה בטוחה של עובדים וכלי רכב"],
+["פינת אכילה ומנוחה","מוסדרת, נקייה, מוצלת, עם ישיבה ומי שתייה, הרחק ממפגעים"],
+["שירותי נוחיות","נקיים, תקינים, נגישים וזמינים, עם תחזוקה שוטפת"],
+["מנהל עבודה","נוכח ומעורב, מקיים פיקוח שוטף ומטפל במפגעים"],
+["פנקס כללי","מנוהל כנדרש בתקנות תכנון ובניה, כולל הנחיות, ביקורות וליקויים"],
+["ממונה בטיחות","מונה ומשולב במערך ניהול הבטיחות, סיורים, מעקב אחר פעולות מתקנות"],
+["תוכנית ניהול בטיחות","עדכניות, התאמה לתקנות (תיקון 2025), אמצעי בקרה, מעקב סיכונים בלתי קבילים"],
+["מנהל אתר","מינוי מתועד, בקרה שוטפת, הדרכות, דיווחים חודשיים (אם נדרש)"],
+["ניהול פנקס הדרכה","הדרכות מתועדות, פרטי משתתפים ובעל מקצוע, הדרכה בכניסה ופעם בשנה"],
+["ציוד מכני הנדסי (צמ״ה)","תקינות, מפעילים מוסמכים, הפרדת תנועת עובדים וכלים"],
+["עגורני צריח ועגורנים אחרים","אישורי כשירות ובדיקות בתוקף, מפעילים מוסמכים"],
+["מכונות הרמה ואביזרי הרמה","אישורי כשירות בתוקף, סימון, מפעילים מוסמכים"],
+["פיגומים","אישורי בדיקה, יציבות, עיגון, גישה בטוחה, הגנות מפני נפילה"],
+["עבודות זמניות, טפסות ותמיכות","תוכנית הנדסית מאושרת, בקרה על התקנה, שימוש ופירוק"],
+["עבודה בגובה","עובדים מוסמכים, אמצעי מיגון, תעודות הסמכה"],
+["עבודה בחלל מוקף","היתר עבודה, ניטור, אוורור, חילוץ ופיקוח"],
+["עבודה חמה באש גלויה / גיצים","נוהל עבודה, אמצעי כיבוי, פיקוח וציוד מגן"],
+["ציוד מגן אישי","מסופק, תקין, מתאים לסיכונים ונעשה בו שימוש"],
+["מיגון מכונות ומניעת פגיעות מכניות","אמצעי מיגון תקינים ומתוחזקים"],
+["חשמל","מתקן ארעי, לוחות, ציוד מטלטל, בדיקות ממסרי פחת (שבועית ותלת־חודשית)"],
+["חפירות ועבודות עפר","יציבות דפנות, סימון וגידור, זיהוי תשתיות תת־קרקעיות"],
+["טיפול בפסולת בניין","איסוף ופינוי שוטף, סדר וניקיון, מעברים פנויים"],
+["אלמנטים טרומיים","אחסון, הנפה, התקנה ועיגון לפי התכנון ההנדסי"],
+["עבודות הריסה","תכנון הנדסי ושיטת ביצוע מאושרת, גידור אזורי סיכון"],
+["אחסון חומרים מסוכנים (חומ״ס) וגלילי גזים","אחסון בטוח, סימון, הפרדות נדרשות"],
+["ציוד כיבוי אש","תקין, נגיש, מסומן, בתוקף; עובדים מיומנים בהפעלה"],
+["ציוד עזרה ראשונה","ציוד, אמצעי פינוי, מגישי עזרה ראשונה ואחראי מונה"],
+["חירום והצלה","מערך מעודכן, צוותים מוכשרים, תרגול שנתי לפחות"],
+["סכנת נפילה","הגנת פתחים וקצוות, מעקות, כיסויים ומיגון אישי"],
+["ניהול סיכונים בלתי קבילים ומעקב אחר פעולות מתקנות","זיהוי, דירוג, דיווח בכתב, אחראי ולוח זמנים, סגירה מתועדת"],
+["קבלני משנה ותיאום עבודות מקבילות","קבלנים מורשים, תחומי אחריות, בקרה על עמידה בתוכנית הבטיחות"],
+["אחר","תיאור מצב או פעולה מסוכנת, ליקויים ומפגעים נוספים"]];
+var KEY="safety-audit-v1",S,flt="";
+function blank(){var h={};H.forEach(function(x){h[x[0]]=""});h.client="";h.date=new Date().toISOString().slice(0,10);return{h:h,g:"",i:T.map(function(){return{s:"",r:"",d:"",n:"",p:[]}})}}
+function load(){try{var v=localStorage.getItem(KEY);if(v)return JSON.parse(v)}catch(e){}return blank()}
+var tm;function save(){clearTimeout(tm);tm=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}},300)}
+function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}
+function build(){
+ S=load();
+ var hd=document.getElementById("hdr");hd.innerHTML="";
+ H.forEach(function(x){var d=el("div");d.appendChild(el("label","",x[1]));var i=el("input");i.type=x[0]=="date"?"date":"text";i.value=S.h[x[0]]||"";i.oninput=function(){S.h[x[0]]=i.value;save()};d.appendChild(i);hd.appendChild(d)});
+ var g=document.getElementById("gen");g.value=S.g||"";g.oninput=function(){S.g=g.value;save()};
+ var L=document.getElementById("list");L.innerHTML="";
+ T.forEach(function(t,k){
+  var it=S.i[k],c=el("div","card it");c.id="it"+k;
+  c.appendChild(el("h3","",(k+1)+". "+esc(t[0])));c.appendChild(el("p","",esc(t[1])));
+  var sg=el("div","seg");
+  [["ok","תקין"],["bad","לא תקין"],["na","לא רלוונטי"]].forEach(function(o){
+   var b=el("button",o[0],o[1]);b.type="button";b.onclick=function(){it.s=it.s==o[0]?"":o[0];upd(k);save()};sg.appendChild(b)});
+  c.appendChild(sg);
+  var m=el("div","more bad");
+  var r=el("div");r.appendChild(el("label","","סיכון"));
+  var sel=el("select","","<option value=''>—</option><option>קביל</option><option>לא קביל</option>");sel.value=it.r;sel.onchange=function(){it.r=sel.value;save()};r.appendChild(sel);m.appendChild(r);
+  var d=el("div");d.appendChild(el("label","","פירוט + הנחיות והמלצות"));var td=el("textarea");td.value=it.d;td.placeholder="פירוט הליקוי והמלצה";td.oninput=function(){it.d=td.value;save()};d.appendChild(td);m.appendChild(d);
+  c.appendChild(m);
+  var n=el("div","more");n.id="n"+k;var nd=el("div");nd.appendChild(el("label","","הערות"));var tn=el("textarea");tn.value=it.n;tn.oninput=function(){it.n=tn.value;save()};nd.appendChild(tn);n.appendChild(nd);c.appendChild(n);
+  var ad=el("button","add","＋ הערה");ad.type="button";ad.onclick=function(){c.classList.toggle("open")};c.appendChild(ad);
+  var pw=el("div","ph");pw.id="ph"+k;c.appendChild(pw);
+  var f=el("input");f.type="file";f.accept="image/*";f.multiple=true;f.style.cssText="margin-top:8px;font-size:13px";f.onchange=function(){addPh(k,f.files);f.value=""};c.appendChild(f);
+  L.appendChild(c);upd(k,1);
+ });
+ sum();
+}
+function upd(k,q){
+ var it=S.i[k],c=document.getElementById("it"+k);
+ c.classList.remove("ok","bad","na");if(it.s)c.classList.add(it.s);
+ if(it.n)c.classList.add("open");
+ c.querySelectorAll(".seg button").forEach(function(b){b.classList.toggle("on",b.className.split(" ")[0]==it.s)});
+ var pw=document.getElementById("ph"+k);pw.innerHTML="";
+ it.p.forEach(function(u,j){var d=el("div");var im=el("img");im.src=u;d.appendChild(im);var x=el("button","","×");x.type="button";x.onclick=function(){it.p.splice(j,1);upd(k);save()};d.appendChild(x);pw.appendChild(d)});
+ c.style.display=(flt&&it.s!=flt&&!(flt=="none"&&!it.s))?"none":"";
+ if(!q)sum();
+}
+function addPh(k,files){
+ Array.prototype.forEach.call(files,function(f){
+  var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){
+   var w=800,s=Math.min(1,w/im.width),cv=document.createElement("canvas");cv.width=im.width*s;cv.height=im.height*s;
+   cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);S.i[k].p.push(cv.toDataURL("image/jpeg",.6));upd(k);save()};im.src=r.result};r.readAsDataURL(f)})
+}
+function sum(){
+ var c={ok:0,bad:0,na:0,none:0};S.i.forEach(function(i){c[i.s||"none"]++});
+ var s=document.getElementById("sum");s.innerHTML="";
+ [["","הכל",T.length],["ok","תקין",c.ok],["bad","לא תקין",c.bad],["na","לא רלוונטי",c.na],["none","טרם נבדק",c.none]].forEach(function(o){
+  var b=el("button","chip"+(flt==o[0]?" on":""),o[1]+"<b>"+o[2]+"</b>");b.type="button";b.onclick=function(){flt=o[0];S.i.forEach(function(_,k){upd(k,1)});sum()};s.appendChild(b)});
+}
+function expo(){
+ var b=new Blob([JSON.stringify(S,null,1)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="safety-audit.json";a.click();
+}
+function reset(){if(confirm("למחוק את כל הנתונים ולהתחיל מבדק חדש?")){try{localStorage.removeItem(KEY)}catch(e){}flt="";build()}}
+build();
+</script>
+</body>
+</html>
